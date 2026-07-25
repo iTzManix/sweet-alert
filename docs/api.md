@@ -199,3 +199,52 @@ Con el backend corriendo (`uvicorn app.main:app --reload` desde `backend/`):
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 - JSON crudo: `http://localhost:8000/openapi.json`
+
+---
+
+## Recomendaciones de UX (para quien haga el front)
+
+El backend no valida "qué tan bien" el usuario conoce cada dato, solo rangos.
+Muchos campos de `AssessmentIn` son difíciles de responder de memoria con un
+input numérico libre — conviene resolverlo en el formulario, sin tocar la
+API. Tres grupos:
+
+**1. Ya no cambian de un día a otro → no volver a preguntarlos.**
+Todo lo que hoy vive en `ProfileIn` (sexo, fecha de nacimiento, estatura,
+educación, ingresos) más lo casi-estático dentro de `AssessmentIn`
+(`high_bp`, `high_chol`, `chol_check`, `smoker`, `stroke`, `heart_disease`,
+`any_healthcare`, `no_doc_cost`, `diff_walk`): prellenar con la última
+respuesta guardada (`GET /assessments`, primer elemento) y dejar que el
+usuario solo confirme o edite, en vez de repetir el formulario completo cada
+check-in.
+
+**2. El usuario no las sabe de memoria, pero no requieren un sensor.**
+`daily_steps`, `sleep_duration_hours`, `physical_activity_level`,
+`sugar_g`/`carbs_g`/`protein_g`/`fat_g`/`fiber_g`/`water_l`/`daily_calories`:
+usar sliders o presets ("poco / normal / mucho") anclados a valores de
+referencia en vez de un input numérico en blanco, por ejemplo:
+
+| Campo | Referencia para anclar el slider |
+|---|---|
+| `daily_steps` | sedentario ~3000, activo ~7000-10000, muy activo ~12000+ |
+| `sleep_duration_hours` | recomendado adultos: 7-9 |
+| `water_l` | recomendado: ~2L |
+| `fiber_g` | recomendado: ~25-30g |
+| `sugar_g` | límite sugerido OMS: ~50g |
+
+Los rangos válidos (min/max) de cada campo están en la tabla de
+[`POST /assessments`](#post-assessments) arriba; úsenlos como límites del
+slider.
+
+**3. Ni con buena UI el usuario da un número confiable → estos sí valen la
+pena conectar a un sensor si en algún momento hay tiempo/alcance.**
+`heart_rate` (frecuencia cardíaca en reposo) es el caso claro: nadie sabe su
+pulso en reposo de memoria. Si el front tiene acceso a HealthKit / Google Fit
+/ Health Connect, prellenar desde ahí; si no, un valor por defecto razonable
+(ej. 70-75 lpm) es más honesto que forzar al usuario a inventar un número.
+Esto es una mejora futura, no bloquea el MVP — el campo sigue siendo un int
+40-200 sin más validación del lado del backend.
+
+Lo verdaderamente subjetivo (`gen_health`, `stress_level`, `sleep_quality`,
+`ment_health_days`, `phys_health_days`) no tiene atajo: son percepción del
+usuario y así deben quedar, como pregunta directa.
