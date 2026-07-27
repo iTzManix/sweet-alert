@@ -8,7 +8,7 @@ Las 5 fases planeadas se completaron; esta versión reemplaza las secciones
 ## Arquitectura
 
 ```
-Usuario (front)
+Frontend (React Native / Expo) ──▶ Supabase Auth (login/signup directo)
      │
      ▼
 Backend (FastAPI) ──▶ Supabase (Auth + Postgres: profiles, assessments)
@@ -102,12 +102,19 @@ backend/
 │   ├── security.py          Valida el Bearer token contra Supabase Auth
 │   ├── supabase_client.py   Cliente de Supabase (service_role key)
 │   ├── thresholds.py        Umbrales/fórmulas de negocio
-│   ├── api/                 Rutas: /profile, /assessments
+│   ├── api/                 Rutas: /profile, /assessments (GET/POST/PUT/DELETE)
 │   ├── schemas/              Pydantic: validación de entrada/salida
 │   ├── services/             risk, symptoms, lifestyle, nutrition, llm
 │   └── models/registry.py   Carga de los .joblib
-└── tests/                    22 tests, Supabase y LLM mockeados
+└── tests/                    27 tests, Supabase y LLM mockeados
 ```
+
+`PUT /assessments/{id}` y `DELETE /assessments/{id}` permiten editar (recalculando
+los 3 modelos + LLM sobre el mismo registro) o borrar un check-in del
+historial — pensado para que el front permita corregir un check-in mal
+llenado sin dejar duplicados. CORS está habilitado (`allow_origins=["*"]`,
+sin credentials) para que el frontend pueda llamar al backend tanto desde
+apps nativas como desde el preview web de Expo.
 
 ### Base de datos (Supabase)
 
@@ -138,12 +145,36 @@ scores de los 3 módulos + nutrición y devuelve **siempre** este JSON:
 Reintenta hasta 3 veces con backoff ante 429/502/503 o respuesta vacía
 (común en modelos `:free` de OpenRouter que agotan la respuesta "pensando").
 
-## Estado (2026-07-25)
+## Frontend
+
+React Native con Expo SDK 57, TypeScript, `expo-router` (file-based) y
+NativeWind (Tailwind) para los estilos. Vive en `frontend/`, ver
+[`frontend/README.md`](../frontend/README.md) para el detalle completo de
+pantallas y decisiones de diseño.
+
+Puntos clave:
+
+- **Auth**: `@supabase/supabase-js` directo desde el cliente (login/signup
+  simples con email + contraseña, sin Google ni verificación de correo — MVP).
+- **Onboarding y check-in como wizards**: en vez de un formulario largo, cada
+  flujo se parte en fases con barra de progreso, guardando el borrador en
+  AsyncStorage para poder retomarlo si se cierra la app a medias.
+- **Historial editable**: cada check-in del historial se puede abrir (ver
+  todas las respuestas), editar (recalcula con `PUT /assessments/{id}`) o
+  eliminar (`DELETE /assessments/{id}`).
+- Sin librerías de estado/formularios adicionales (Context + `useReducer`
+  alcanza para 3 endpoints); sin gráfico de tendencia ni modo oscuro en este
+  MVP.
+
+## Estado (2026-07-27)
 
 - ✅ Los 4 modelos entrenados y exportados (`models_artifacts/*.joblib`).
-- ✅ Backend funcionando: 22 tests pasan, conexión con OpenRouter verificada
+- ✅ Backend funcionando: 27 tests pasan, conexión con OpenRouter verificada
   en vivo, tablas `profiles`/`assessments` existen en el proyecto de
-  Supabase real y coinciden con los schemas de la API.
+  Supabase real y coinciden con los schemas de la API. Incluye editar/borrar
+  check-ins (`PUT`/`DELETE /assessments/{id}`) y CORS habilitado.
+- ✅ Frontend funcionando (Expo SDK 57): login/signup, onboarding de perfil,
+  check-in por fases, historial con ver/editar/eliminar.
 - ✅ Documentación de API para el front (`docs/api.md`).
 - ⚠️ Pendiente: cargar la `service_role` key real de Supabase en
   `backend/.env` (el valor actual es un placeholder).

@@ -55,6 +55,52 @@ def test_list_assessments_returns_saved_items(client, sample_profile_payload, sa
     assert len(res.json()) == 1
 
 
+def test_list_assessments_includes_answers(client, sample_profile_payload, sample_assessment_payload):
+    client.put("/profile", json=sample_profile_payload)
+    client.post("/assessments", json=sample_assessment_payload)
+
+    history = client.get("/assessments").json()
+    assert history[0]["weight_kg"] == sample_assessment_payload["weight_kg"]
+    assert history[0]["polydipsia"] == sample_assessment_payload["polydipsia"]
+
+
+def test_update_assessment_recalculates(client, sample_profile_payload, sample_assessment_payload):
+    client.put("/profile", json=sample_profile_payload)
+    created = client.post("/assessments", json=sample_assessment_payload).json()
+
+    changed_payload = {**sample_assessment_payload, "weight_kg": 120, "high_bp": True}
+    res = client.put(f"/assessments/{created['id']}", json=changed_payload)
+    assert res.status_code == 200
+    body = res.json()
+    assert body["id"] == created["id"]
+    assert body["weight_kg"] == 120
+
+    history = client.get("/assessments").json()
+    assert len(history) == 1
+    assert history[0]["weight_kg"] == 120
+
+
+def test_update_assessment_not_found(client, sample_assessment_payload):
+    res = client.put("/assessments/does-not-exist", json=sample_assessment_payload)
+    assert res.status_code == 404
+
+
+def test_delete_assessment(client, sample_profile_payload, sample_assessment_payload):
+    client.put("/profile", json=sample_profile_payload)
+    created = client.post("/assessments", json=sample_assessment_payload).json()
+
+    res = client.delete(f"/assessments/{created['id']}")
+    assert res.status_code == 204
+
+    history = client.get("/assessments").json()
+    assert history == []
+
+
+def test_delete_assessment_not_found(client):
+    res = client.delete("/assessments/does-not-exist")
+    assert res.status_code == 404
+
+
 def test_endpoints_require_auth():
     from fastapi.testclient import TestClient
 

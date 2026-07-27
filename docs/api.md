@@ -137,6 +137,10 @@ campos son obligatorios.
 Ejemplo completo de body: ver `_EXAMPLE` en `backend/app/schemas/assessment.py`
 o el "Try it out" de Swagger UI en `/docs`.
 
+La respuesta incluye también los campos de `AssessmentIn` (las respuestas del
+formulario), no solo los resultados calculados — útil para mostrar el
+historial completo en el front.
+
 ### Respuesta 200 (`AssessmentOut`)
 
 ```json
@@ -174,6 +178,29 @@ o el "Try it out" de Swagger UI en `/docs`.
 
 Historial del usuario autenticado, array de `AssessmentOut`, más reciente
 primero. Array vacío si nunca hizo un check-in.
+
+---
+
+## `PUT /assessments/{assessment_id}`
+
+Edita un check-in existente: reemplaza el `AssessmentIn` guardado, vuelve a
+correr los 3 modelos + nutrición + LLM, y actualiza ese mismo registro
+(mismo `id`, mismo `created_at`).
+
+- **404** si el `assessment_id` no existe o no pertenece al usuario autenticado.
+- **400** si el usuario no tiene perfil (no debería pasar si ya hizo el check-in original).
+- **422** con los mismos rangos que `POST /assessments`.
+
+Respuesta 200: `AssessmentOut` actualizado.
+
+---
+
+## `DELETE /assessments/{assessment_id}`
+
+Elimina un check-in del historial.
+
+- **204** sin body si se eliminó.
+- **404** si el `assessment_id` no existe o no pertenece al usuario autenticado.
 
 ---
 

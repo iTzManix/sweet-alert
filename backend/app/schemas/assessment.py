@@ -112,7 +112,7 @@ class AssessmentIn(BaseModel):
     model_config = ConfigDict(json_schema_extra={"example": _EXAMPLE})
 
 
-class AssessmentOut(BaseModel):
+class AssessmentOut(AssessmentIn):
     id: str
     created_at: str
     risk_probability: float = Field(description="Probabilidad de riesgo de diabetes, 0-1 (Modelo 1)")

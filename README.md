@@ -11,6 +11,7 @@ FINDRISC automatizado.
 ```
 .
 ├── backend/           API en FastAPI (ver backend/README o docs/api.md)
+├── frontend/           App en React Native / Expo SDK 57 (ver frontend/README.md)
 ├── models_artifacts/  Modelos entrenados (*.joblib), consumidos por el backend
 ├── notebooks/         Notebooks de entrenamiento (uno por modelo)
 ├── data/              Datasets crudos usados para entrenar (CSV)
@@ -27,13 +28,28 @@ cd backend
 python -m venv ../.venv && source ../.venv/bin/activate   # o el venv que ya exista en la raíz
 pip install -r requirements.txt
 cp .env.example .env   # completar SUPABASE_SERVICE_ROLE_KEY y OPENROUTER_API_KEY
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 - Swagger UI: http://localhost:8000/docs
 - Tests: `pytest` desde `backend/` (Supabase y el LLM van mockeados, no hace falta red)
 
 Ver [`docs/api.md`](docs/api.md) para el contrato completo de cada endpoint.
+
+## Quickstart (frontend)
+
+Con el backend ya corriendo:
+
+```bash
+cd frontend
+cp .env.example .env   # completar EXPO_PUBLIC_SUPABASE_ANON_KEY y la IP de tu backend
+npx expo start
+```
+
+Escanea el QR con Expo Go (celular y compu en la misma red WiFi). En Supabase,
+desactiva "Confirm email" (Authentication → Providers → Email) para que el
+signup del MVP funcione sin verificación. Ver [`frontend/README.md`](frontend/README.md)
+para el detalle de pantallas y decisiones de diseño.
 
 ## Notebooks → modelos
 
@@ -53,3 +69,5 @@ desde `notebooks/` (paths relativos a `../data` y `../models_artifacts`).
 - [`docs/proyecto.md`](docs/proyecto.md) — arquitectura, decisiones de cada
   modelo, resultados reales de entrenamiento, estado actual.
 - [`docs/api.md`](docs/api.md) — referencia de la API para el frontend.
+- [`frontend/README.md`](frontend/README.md) — stack, estructura de pantallas
+  y cómo correr la app React Native.

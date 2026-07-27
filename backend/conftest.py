@@ -19,9 +19,9 @@ class FakeResult:
 class FakeTable:
     """Doble de prueba minimo del query builder de supabase-py.
 
-    ponytail: no filtra de verdad por .eq(), solo devuelve lo que haya en la
-    tabla en memoria. Alcanza porque cada test usa un solo usuario/tabla; si
-    hiciera falta multi-usuario en un mismo test, hay que implementar el filtro.
+    Filtra de verdad por .eq() (necesario para probar ownership en
+    update/delete); alcanza con soportar AND de igualdad, que es todo lo que
+    usan las rutas reales.
     """
 
     def __init__(self, store: dict, name: str):
@@ -29,12 +29,14 @@ class FakeTable:
         self.name = name
         self._mode = None
         self._result = None
+        self._filters: dict = {}
 
     def select(self, *_a, **_k):
         self._mode = "select"
         return self
 
-    def eq(self, *_a, **_k):
+    def eq(self, field, value):
+        self._filters[field] = value
         return self
 
     def limit(self, *_a, **_k):
@@ -42,6 +44,9 @@ class FakeTable:
 
     def order(self, *_a, **_k):
         return self
+
+    def _matches(self, row):
+        return all(row.get(k) == v for k, v in self._filters.items())
 
     def insert(self, payload):
         row = {**payload, "id": "22222222-2222-2222-2222-222222222222", "created_at": "2026-07-25T00:00:00Z"}
@@ -56,9 +61,28 @@ class FakeTable:
         self._mode = "write"
         return self
 
+    def update(self, payload):
+        rows = self.store.get(self.name, [])
+        matched = [r for r in rows if self._matches(r)]
+        for r in matched:
+            r.update(payload)
+        self._result = matched
+        self._mode = "write"
+        return self
+
+    def delete(self):
+        rows = self.store.get(self.name, [])
+        self.store[self.name] = [r for r in rows if not self._matches(r)]
+        self._result = [r for r in rows if self._matches(r)]
+        self._mode = "write"
+        return self
+
     def execute(self):
         if self._mode == "select":
-            return FakeResult(list(self.store.get(self.name, [])))
+            rows = self.store.get(self.name, [])
+            if self._filters:
+                rows = [r for r in rows if self._matches(r)]
+            return FakeResult(rows)
         return FakeResult(self._result)
 
 
