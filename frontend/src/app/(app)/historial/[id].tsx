@@ -87,7 +87,7 @@ export default function HistorialDetalle() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'bottom']}>
-      <ScrollView contentContainerClassName="gap-4 p-6 pb-10" showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerClassName="gap-4 p-6 pb-32" showsVerticalScrollIndicator={false}>
         <Text className="text-sm text-slate-500">{new Date(item.created_at).toLocaleString()}</Text>
 
         <Card className="gap-2">
@@ -144,7 +144,7 @@ export default function HistorialDetalle() {
           ))}
         </Card>
 
-        <Card className="gap-3 bg-brand-50">
+        <Card className="gap-3 !bg-brand-50">
           <Text className="text-base font-semibold text-brand-900">Recomendación</Text>
           <Text className="text-sm text-brand-900">{item.llm_recommendation.resumen}</Text>
           <View className="gap-2">

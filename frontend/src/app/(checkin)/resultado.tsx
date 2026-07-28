@@ -49,7 +49,7 @@ export default function CheckinResultado() {
           />
         </Card>
 
-        <Card className="gap-3 bg-brand-50">
+        <Card className="gap-3 !bg-brand-50">
           <Text className="text-base font-semibold text-brand-900">Recomendación</Text>
           <Text className="text-sm text-brand-900">{result.llm_recommendation.resumen}</Text>
           <View className="gap-1">

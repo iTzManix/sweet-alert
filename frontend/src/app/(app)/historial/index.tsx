@@ -44,7 +44,7 @@ export default function Historial() {
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
-        contentContainerClassName="gap-3 p-6"
+        contentContainerClassName="gap-3 p-6 pb-32"
         ListHeaderComponent={<Text className="mb-1 text-2xl font-bold text-slate-900">Historial</Text>}
         ListEmptyComponent={
           <Card>
